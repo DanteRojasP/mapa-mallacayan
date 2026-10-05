@@ -4,30 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mallacayán | Study Area</title>
-<meta name="description" content="Interactive study-area map of Mallacayán, La Merced, Aija, Áncash, Peru.">
-<style>html,body{margin:0;padding:0;background:#fff}body{padding:8px;box-sizing:border-box}a:focus-visible{outline:3px solid #e4a52b;outline-offset:3px}</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+html,body,#map{height:100%;width:100%;margin:0;padding:0}body{background:#e6eff2}#map{min-height:240px}.study-pin{background:none;border:0}.study-pin svg{display:block;filter:drop-shadow(0 2px 3px #0005)}.study-pin:focus-visible{outline:3px solid #e4a52b;outline-offset:5px;border-radius:50%}.leaflet-tooltip{font:14px Arial,sans-serif}
+</style>
 </head>
 <body>
-
-<!-- Reference location: I.E. 86145, Mallacayán, La Merced, Aija.
-     Approximate coordinates; NOT the sensor location.
-     Source: Provincial Municipality of Aija, risk prevention and reduction plan,
-     educational institutions table (WGS84/UTM 18S).
-     https://cdn.www.gob.pe/uploads/document/file/5581695/4959296-plan-de-prevencion-y-reducion-de-riesgos-de-desastres-mp-aija.pdf
-     The map requires Internet access and editor support for iframe and target. -->
-<div lang="en" style="width:100%;max-width:960px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#164536;background:#fff;border:1px solid #d9e5df;border-radius:12px;overflow:hidden;box-sizing:border-box;">
-  <div style="padding:17px 18px 13px;background:#f3f8f5;">
-    <div style="font-size:12px;font-weight:700;letter-spacing:1.8px;color:#507267;margin-bottom:6px;">STUDY AREA · PERU</div>
-    <div style="font-size:26px;line-height:1.2;font-weight:700;margin-bottom:5px;">Mallacayán</div>
-    <div style="font-size:14px;line-height:1.5;color:#507267;">La Merced · Aija · Áncash</div>
-  </div>
-  <div style="padding:12px 18px;display:flex;gap:8px;flex-wrap:wrap;">
-    <a href="https://www.openstreetmap.org/export/embed.html?bbox=-77.630%2C-9.740%2C-77.565%2C-9.695&amp;layer=mapnik&amp;marker=-9.7185%2C-77.5986" target="mapa-mallacayan-iac" style="display:inline-block;background:#006b46;color:#fff;padding:11px 15px;border-radius:7px;text-decoration:none;font-size:14px;font-weight:700;line-height:1.3;">Zoom to Mallacayán ↗</a>
-    <a href="https://www.openstreetmap.org/export/embed.html?bbox=-83.2%2C-19.5%2C-66.0%2C1.0&amp;layer=mapnik&amp;marker=-9.7185%2C-77.5986" target="mapa-mallacayan-iac" style="display:inline-block;background:#edf3ef;color:#164536;padding:11px 15px;border-radius:7px;text-decoration:none;font-size:14px;line-height:1.3;">Back to Peru</a>
-  </div>
-  <iframe name="mapa-mallacayan-iac" title="Interactive map of Peru and Mallacayán, Áncash" src="https://www.openstreetmap.org/export/embed.html?bbox=-83.2%2C-19.5%2C-66.0%2C1.0&amp;layer=mapnik&amp;marker=-9.7185%2C-77.5986" width="100%" height="480" style="display:block;width:100%;height:480px;border:0;background:#e6eff2;" loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-  <div style="padding:9px 18px;font-size:12px;line-height:1.5;color:#507267;">Community reference location.</div>
-</div>
-
+<div id="map" role="region" aria-label="Map of Peru. Select the marker to zoom to Mallacayán."></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Community reference: I.E. 86145, Mallacayán, La Merced, Aija.
+// Approximate coordinates, not the sensor location.
+const locationPoint = [-9.7185, -77.5986];
+const peruBounds = [[-18.4,-81.4],[-0.0,-68.5]];
+const map = L.map('map', {zoomControl:false,scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false,boxZoom:false,keyboard:false,zoomSnap:0.1});
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+map.fitBounds(peruBounds,{padding:[20,20]});
+const pin = L.divIcon({className:'study-pin',html:'<svg xmlns="http://www.w3.org/2000/svg" width="38" height="48" viewBox="0 0 38 48" aria-hidden="true"><path d="M19 46C15 40 2 28 2 19a17 17 0 1 1 34 0c0 9-13 21-17 27Z" fill="#006b46" stroke="white" stroke-width="2.5"/><circle cx="19" cy="19" r="6" fill="white"/></svg>',iconSize:[38,48],iconAnchor:[19,46],tooltipAnchor:[0,-40]});
+const marker = L.marker(locationPoint,{icon:pin,keyboard:true,title:'Zoom to Mallacayán',alt:'Zoom to Mallacayán',riseOnHover:true}).addTo(map);
+marker.bindTooltip('Mallacayán',{direction:'top'});
+let zoomed = false;
+marker.on('click',function(){zoomed=true;map.flyTo(locationPoint,13,{duration:1.5});});
+window.addEventListener('resize',function(){map.invalidateSize();if(!zoomed)map.fitBounds(peruBounds,{padding:[20,20]});});
+</script>
 </body>
 </html>
