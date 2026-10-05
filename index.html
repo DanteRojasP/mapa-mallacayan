@@ -6,7 +6,7 @@
 <title>Mallacayán | Study Area</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-html,body,#map{height:100%;width:100%;margin:0;padding:0}body{background:#e6eff2}#map{min-height:240px}.study-pin{background:none;border:0}.study-pin svg{display:block;filter:drop-shadow(0 2px 3px #0005)}.study-pin:focus-visible{outline:3px solid #e4a52b;outline-offset:5px;border-radius:50%}.leaflet-tooltip{font:14px Arial,sans-serif}
+html,body,#map{height:100%;width:100%;margin:0;padding:0}body{background:#e6eff2}#map{min-height:240px;touch-action:none;overscroll-behavior:contain}.study-pin{background:none;border:0}.study-pin svg{display:block;filter:drop-shadow(0 2px 3px #0005)}.study-pin:focus-visible{outline:3px solid #e4a52b;outline-offset:5px;border-radius:50%}.leaflet-tooltip{font:14px Arial,sans-serif}
 </style>
 </head>
 <body>
@@ -17,7 +17,7 @@ html,body,#map{height:100%;width:100%;margin:0;padding:0}body{background:#e6eff2
 // Approximate coordinates, not the sensor location.
 const locationPoint = [-9.7185, -77.5986];
 const peruBounds = [[-18.4,-81.4],[-0.0,-68.5]];
-const map = L.map('map', {zoomControl:true,scrollWheelZoom:true,doubleClickZoom:true,touchZoom:true,boxZoom:true,keyboard:true,zoomSnap:0.1});
+const map = L.map('map', {zoomControl:true,scrollWheelZoom:true,doubleClickZoom:true,touchZoom:false,boxZoom:true,keyboard:true,zoomSnap:0.1});
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
 map.fitBounds(peruBounds,{padding:[20,20]});
 const pin = L.divIcon({className:'study-pin',html:'<svg xmlns="http://www.w3.org/2000/svg" width="38" height="48" viewBox="0 0 38 48" aria-hidden="true"><path d="M19 46C15 40 2 28 2 19a17 17 0 1 1 34 0c0 9-13 21-17 27Z" fill="#006b46" stroke="white" stroke-width="2.5"/><circle cx="19" cy="19" r="6" fill="white"/></svg>',iconSize:[38,48],iconAnchor:[19,46],tooltipAnchor:[0,-40]});
@@ -26,8 +26,37 @@ marker.bindTooltip('Mallacayán',{direction:'top'});
 let zoomed = false;
 map.on('zoomstart movestart',function(){zoomed=true;});
 marker.on('click',function(){zoomed=true;map.flyTo(locationPoint,13,{duration:1.5});});
+
+// Handle two-finger gestures explicitly inside the iPoster iframe.
+const mapElement = map.getContainer();
+let pinch = null;
+function touchDistance(touches){return Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);}
+function touchMidpoint(touches){const rect=mapElement.getBoundingClientRect();return L.point((touches[0].clientX+touches[1].clientX)/2-rect.left,(touches[0].clientY+touches[1].clientY)/2-rect.top);}
+mapElement.addEventListener('touchstart',function(event){
+  if(event.touches.length!==2)return;
+  event.preventDefault();map.stop();
+  const midpoint=touchMidpoint(event.touches);
+  pinch={distance:touchDistance(event.touches),zoom:map.getZoom(),anchor:map.containerPointToLatLng(midpoint),dragging:map.dragging.enabled()};
+  map.dragging.disable();
+},{passive:false});
+mapElement.addEventListener('touchmove',function(event){
+  if(!pinch||event.touches.length!==2)return;
+  event.preventDefault();
+  const distance=touchDistance(event.touches);
+  if(!distance||!pinch.distance)return;
+  const zoom=Math.max(2,Math.min(19,pinch.zoom+Math.log2(distance/pinch.distance)));
+  const midpoint=touchMidpoint(event.touches);
+  const center=map.project(pinch.anchor,zoom).subtract(midpoint.subtract(map.getSize().divideBy(2)));
+  map.setView(map.unproject(center,zoom),zoom,{animate:false});
+},{passive:false});
+function finishPinch(event){if(!pinch||event.touches.length>=2)return;const enableDragging=pinch.dragging;pinch=null;if(enableDragging)map.dragging.enable();}
+mapElement.addEventListener('touchend',finishPinch);
+mapElement.addEventListener('touchcancel',finishPinch);
+
 window.addEventListener('resize',function(){map.invalidateSize();if(!zoomed)map.fitBounds(peruBounds,{padding:[20,20]});});
 </script>
 </body>
 </html>
+
+
 
